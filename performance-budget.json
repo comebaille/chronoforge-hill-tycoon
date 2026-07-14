@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "target_platform": "Build Vite de production dans Chromium sur Mac, viewport mobile 390x844 CSS px (émulation de viewport uniquement, pas une mesure sur téléphone physique)",
+  "scenarios": {
+    "cold-start": {
+      "max": {
+        "startup_ms": 3000,
+        "download_mb": 1.5
+      }
+    },
+    "core-gameplay": {
+      "min": {
+        "fps": 55
+      },
+      "max": {
+        "frame_p95_ms": 20,
+        "simulation_tick_p95_ms": 6,
+        "canvas_render_p95_ms": 8,
+        "peak_active_entities": 58,
+        "peak_active_particles": 170
+      }
+    }
+  }
+}

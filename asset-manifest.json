@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "art_direction": "Illustration 2.5D peinte et lisible sur mobile, silhouettes épaisses, base préhistorique chaude vers sommet hyperfutur cyan-violet",
+  "assets": [
+    {
+      "id": "chronoforge-key-art",
+      "origin": "generated",
+      "kind": "portrait-key-art",
+      "generator": "OpenAI built-in image generation tool",
+      "prompt": "Original premium portrait mobile tycoon battlefield climbing one monumental hill through successive eras, from prehistoric warriors to a luminous hyperfuturistic citadel; polished 2.5D hand-painted game illustration; deep navy, ember orange, antique gold, electric cyan and violet; no text, logos, trademarks, watermark or gore",
+      "local_paths": [
+        "source-assets/chronoforge-key-art-source.png",
+        "public/assets/generated/chronoforge-key-art.webp"
+      ],
+      "used_for": [
+        "title screen hero art",
+        "battlefield atmosphere beneath gameplay"
+      ],
+      "modifications": "Source PNG archived outside the runtime bundle; converted to quality-78 WebP (224 KB); dark runtime color wash preserves HUD and unit readability"
+    },
+    {
+      "id": "unit-sprite-atlas",
+      "origin": "original",
+      "kind": "svg-sprite-atlas",
+      "local_paths": [
+        "public/assets/original/unit-sprites.svg"
+      ],
+      "used_for": [
+        "six allied and enemy combat roles",
+        "barracks role portraits"
+      ],
+      "modifications": "Original project vector artwork arranged as six 128 by 128 cells and rendered with team rings, era palettes and state animation"
+    },
+    {
+      "id": "app-icon",
+      "origin": "original",
+      "kind": "svg-app-icon",
+      "local_paths": [
+        "public/icons/chronoforge-icon.svg",
+        "public/icons/chronoforge-icon-192.png",
+        "public/icons/chronoforge-icon-512.png"
+      ],
+      "used_for": [
+        "PWA installation icon",
+        "browser icon"
+      ],
+      "modifications": "Original vector mark combining the ascending timeline path, forge spark and summit; exported as transparent 192 px and 512 px PNGs for reliable mobile installation"
+    }
+  ],
+  "visual_requirements": [
+    {
+      "id": "title-screen",
+      "role": "Hero title screen establishing the climb through nine ages",
+      "priority": "hero",
+      "strategy": "generated",
+      "asset_ids": [
+        "chronoforge-key-art"
+      ]
+    },
+    {
+      "id": "combat-units",
+      "role": "Readable combatants for all six gameplay roles",
+      "priority": "major",
+      "strategy": "original",
+      "asset_ids": [
+        "unit-sprite-atlas"
+      ]
+    },
+    {
+      "id": "installed-app-identity",
+      "role": "Original PWA and browser identity",
+      "priority": "minor",
+      "strategy": "original",
+      "asset_ids": [
+        "app-icon"
+      ]
+    },
+    {
+      "id": "battlefield-path",
+      "role": "Structural hill path, capture ellipse and base gates",
+      "priority": "structural",
+      "strategy": "code-primitive",
+      "asset_ids": [],
+      "exception": "Procedural paths adapt exactly to every phone aspect ratio and remain subordinate to the generated painted backdrop"
+    },
+    {
+      "id": "semantic-ui-icons",
+      "role": "Small navigation and action icons",
+      "priority": "minor",
+      "strategy": "code-primitive",
+      "asset_ids": [],
+      "exception": "Original inline SVG paths are semantic interface glyphs, not visible art placeholders"
+    }
+  ]
+}

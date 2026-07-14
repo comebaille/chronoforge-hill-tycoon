@@ -1,0 +1,31 @@
+{
+  "name": "Chronoforge — Hill Tycoon",
+  "short_name": "Chronoforge",
+  "description": "Bâtissez une armée, gravissez la colline et traversez neuf âges.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080d1d",
+  "theme_color": "#0a1024",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/chronoforge-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/chronoforge-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/chronoforge-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "version": 3,
+  "saveId": "fixture-v3-bronze-front",
+  "updatedAt": 1767225600000,
+  "lastActiveAt": 1767225600000,
+  "coins": 980,
+  "ageIndex": 1,
+  "sectorInAge": 2,
+  "totalSectors": 7,
+  "capture": 36.5,
+  "pressure": 42,
+  "stars": 19,
+  "bestIncomePerSecond": 14.25,
+  "spawners": {
+    "assault": {
+      "role": "assault",
+      "level": 7,
+      "count": 1,
+      "timer": 1.2,
+      "order": "push"
+    },
+    "ranger": {
+      "role": "ranger",
+      "level": 5,
+      "count": 1,
+      "timer": 2.4,
+      "order": "hunt"
+    },
+    "guardian": {
+      "role": "guardian",
+      "level": 3,
+      "count": 1,
+      "timer": 4.5,
+      "order": "defend"
+    },
+    "scout": {
+      "role": "scout",
+      "level": 1,
+      "count": 1,
+      "timer": 3.1,
+      "order": "hero"
+    },
+    "support": {
+      "role": "support",
+      "level": 0,
+      "count": 0,
+      "timer": 4.725,
+      "order": "push"
+    },
+    "siege": {
+      "role": "siege",
+      "level": 0,
+      "count": 0,
+      "timer": 6.3,
+      "order": "push"
+    }
+  },
+  "gear": {
+    "heroWeapon": 5,
+    "heroArmor": 4,
+    "armyWeapon": 3,
+    "armyArmor": 3,
+    "boots": 2,
+    "banner": 2
+  },
+  "prestige": {
+    "crystals": 0,
+    "lifetimeCrystals": 0,
+    "ranks": {
+      "damage": 0,
+      "health": 0,
+      "logistics": 0,
+      "income": 0,
+      "hero": 0,
+      "offline": 0
+    }
+  },
+  "missions": [
+    {
+      "id": "kills",
+      "progress": 34,
+      "claimed": false
+    },
+    {
+      "id": "hero",
+      "progress": 8,
+      "claimed": false
+    },
+    {
+      "id": "upgrades",
+      "progress": 3,
+      "claimed": true
+    }
+  ],
+  "stats": {
+    "kills": 214,
+    "heroKills": 43,
+    "bosses": 1,
+    "coinsEarned": 18340,
+    "taps": 126,
+    "playSeconds": 4680,
+    "highestDps": 112.75
+  },
+  "tutorialStep": 6,
+  "tutorialComplete": true,
+  "claimedOfflineAt": 1767225600000
+}

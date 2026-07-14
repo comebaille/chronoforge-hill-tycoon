@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "product": "Chronoforge Hill Tycoon",
+  "current_save_version": 3,
+  "storage": {
+    "backend": "localstorage",
+    "key": "chronoforge.save.v3",
+    "slots": 1,
+    "backup_key": "chronoforge.save.backup",
+    "settings_key": "chronoforge.settings.v1"
+  },
+  "required_root_fields": [
+    "version",
+    "saveId",
+    "updatedAt",
+    "lastActiveAt",
+    "coins",
+    "ageIndex",
+    "sectorInAge",
+    "totalSectors",
+    "capture",
+    "pressure",
+    "stars",
+    "bestIncomePerSecond",
+    "spawners",
+    "gear",
+    "prestige",
+    "missions",
+    "stats",
+    "tutorialStep",
+    "tutorialComplete",
+    "claimedOfflineAt"
+  ],
+  "stable_id_namespaces": [
+    "ages",
+    "unit_roles",
+    "gear_slots",
+    "missions",
+    "prestige_upgrades"
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "handler": "migrateV1ToV2"
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "handler": "migrateV2ToV3"
+    }
+  ],
+  "settings_keys": [
+    "masterVolume",
+    "musicVolume",
+    "effectsVolume",
+    "uiVolume",
+    "muted",
+    "reducedMotion",
+    "highContrast",
+    "largeText",
+    "haptics",
+    "particles",
+    "floatingNumbers",
+    "autoAttack",
+    "leftHanded",
+    "batterySaver"
+  ],
+  "input_actions": [
+    {
+      "id": "hero-strike",
+      "required": true,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    },
+    {
+      "id": "targeted-strike",
+      "required": false,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    },
+    {
+      "id": "chrono-burst",
+      "required": true,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    },
+    {
+      "id": "toggle-auto-attack",
+      "required": false,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    },
+    {
+      "id": "pause",
+      "required": true,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    },
+    {
+      "id": "navigate-panel",
+      "required": true,
+      "remappable": false,
+      "bindings": [
+        "touch"
+      ]
+    }
+  ]
+}

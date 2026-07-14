@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "captured_at": "2026-07-13T20:52:16+02:00",
+  "device": "Mac hôte, Chromium intégré à Codex, viewport 390x844 CSS px, échelle Canvas 1x ; émulation de viewport uniquement",
+  "build": "Vite production preview ; app.js 87.22 kB, app.css 30.41 kB ; trois fenêtres de combat de 12 s après préchauffage",
+  "methodology": "Valeurs agrégées conservatrices : FPS minimum et p95/maxima les plus défavorables des trois passages. startup_ms vient de Navigation Timing ; download_mb additionne les encodedBodySize observés après chargement audio. simulation_tick_p95_ms mesure fixedUpdate ; canvas_render_p95_ms mesure le travail JavaScript Canvas, hors paint/composite GPU.",
+  "scenarios": {
+    "cold-start": {
+      "startup_ms": 120.3,
+      "download_mb": 0.9407
+    },
+    "core-gameplay": {
+      "fps": 59.9,
+      "frame_p95_ms": 17.5,
+      "simulation_tick_p95_ms": 0.2,
+      "canvas_render_p95_ms": 0.6,
+      "peak_active_entities": 9,
+      "peak_active_particles": 26
+    }
+  },
+  "trials": [
+    { "fps": 59.9, "frame_p95_ms": 17.4, "simulation_tick_p95_ms": 0.2, "canvas_render_p95_ms": 0.6, "peak_active_entities": 8, "peak_active_particles": 26 },
+    { "fps": 60.0, "frame_p95_ms": 17.3, "simulation_tick_p95_ms": 0.2, "canvas_render_p95_ms": 0.6, "peak_active_entities": 8, "peak_active_particles": 16 },
+    { "fps": 60.0, "frame_p95_ms": 17.5, "simulation_tick_p95_ms": 0.1, "canvas_render_p95_ms": 0.6, "peak_active_entities": 9, "peak_active_particles": 15 }
+  ]
+}

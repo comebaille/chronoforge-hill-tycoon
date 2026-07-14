@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "audio_direction": "Layered original strategy pulse with restrained low percussion, short readable impacts, bright economy confirmation and a ceremonial era chord",
+  "mix_buses": [
+    { "id": "master", "parent": null },
+    { "id": "music", "parent": "master" },
+    { "id": "sfx", "parent": "master" },
+    { "id": "ui", "parent": "master" }
+  ],
+  "assets": [
+    {
+      "id": "chronoforge-music-loop",
+      "origin": "original",
+      "kind": "music",
+      "rights_note": "Original waveform synthesized specifically for this project by scripts/generate-audio.mjs; no sampled third-party material",
+      "local_paths": [
+        "public/audio/original/chronoforge-loop.wav"
+      ],
+      "used_for": [
+        "continuous battlefield music"
+      ],
+      "modifications": "Mono 22050 Hz PCM, periodic rhythm and pitched voices, short edge fade",
+      "gain_db": -18,
+      "loop": true,
+      "loop_notes": "Full 12-second file loops; edges fade over 80 ms to prevent clicks"
+    },
+    {
+      "id": "combat-impact",
+      "origin": "original",
+      "kind": "sfx",
+      "rights_note": "Original noise and sine transient synthesized specifically for this project",
+      "local_paths": [
+        "public/audio/original/impact.wav"
+      ],
+      "used_for": [
+        "melee and projectile impacts"
+      ],
+      "modifications": "Pitch and volume variation applied at runtime; event rate limited",
+      "gain_db": -8,
+      "max_instances": 5,
+      "loop": false
+    },
+    {
+      "id": "economy-coin",
+      "origin": "original",
+      "kind": "ui",
+      "rights_note": "Original two-stage pitched confirmation synthesized specifically for this project",
+      "local_paths": [
+        "public/audio/original/coin.wav"
+      ],
+      "used_for": [
+        "kill rewards",
+        "mission rewards"
+      ],
+      "modifications": "Repeated kill events are grouped by a 110 ms limiter and receive slight pitch variation",
+      "gain_db": -10,
+      "max_instances": 3,
+      "loop": false
+    },
+    {
+      "id": "era-unlock",
+      "origin": "original",
+      "kind": "sfx",
+      "rights_note": "Original four-note chord synthesized specifically for this project",
+      "local_paths": [
+        "public/audio/original/era-unlock.wav"
+      ],
+      "used_for": [
+        "sector conquest",
+        "chrono burst",
+        "prestige"
+      ],
+      "modifications": "Fixed pitch ceremonial playback for conquest; runtime gain limited",
+      "gain_db": -9,
+      "max_instances": 2,
+      "loop": false
+    },
+    {
+      "id": "ui-confirm",
+      "origin": "original",
+      "kind": "ui",
+      "rights_note": "Original rising sine transient synthesized specifically for this project",
+      "local_paths": [
+        "public/audio/original/ui-confirm.wav"
+      ],
+      "used_for": [
+        "purchases",
+        "navigation confirmation"
+      ],
+      "modifications": "Short unlooped confirmation with a dedicated UI gain bus",
+      "gain_db": -12,
+      "max_instances": 3,
+      "loop": false
+    }
+  ],
+  "audio_requirements": [
+    {
+      "id": "battlefield-music",
+      "role": "Persistent musical identity after the first user gesture",
+      "priority": "hero",
+      "strategy": "original",
+      "asset_ids": ["chronoforge-music-loop"],
+      "bus": "music"
+    },
+    {
+      "id": "combat-readability",
+      "role": "Impact confirmation synchronized to damage",
+      "priority": "major",
+      "strategy": "original",
+      "asset_ids": ["combat-impact"],
+      "bus": "sfx"
+    },
+    {
+      "id": "economy-feedback",
+      "role": "Audible coin and mission confirmation",
+      "priority": "major",
+      "strategy": "original",
+      "asset_ids": ["economy-coin"],
+      "bus": "ui"
+    },
+    {
+      "id": "conquest-feedback",
+      "role": "Ceremonial sector, era and prestige confirmation",
+      "priority": "major",
+      "strategy": "original",
+      "asset_ids": ["era-unlock"],
+      "bus": "sfx"
+    },
+    {
+      "id": "menu-confirmation",
+      "role": "Short confirmation for purchases and navigation",
+      "priority": "system",
+      "strategy": "original",
+      "asset_ids": ["ui-confirm"],
+      "bus": "ui"
+    }
+  ]
+}

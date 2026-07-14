@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Chronoforge">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#08122c"/>
+      <stop offset="1" stop-color="#39207c"/>
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#ffad45"/>
+      <stop offset="1" stop-color="#74efff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M96 414c75-37 56-91 122-126 55-29 44-82 88-112 35-24 64-50 87-94" fill="none" stroke="url(#path)" stroke-width="66" stroke-linecap="round"/>
+  <path d="M333 78h80v80h-80z" fill="#eafcff" transform="rotate(45 373 118)"/>
+  <circle cx="129" cy="394" r="38" fill="#ffbc58" stroke="#fff3d6" stroke-width="10"/>
+  <path d="M129 359v-63M96 321h66" stroke="#fff3d6" stroke-width="15" stroke-linecap="round"/>
+</svg>
