@@ -1,6 +1,7 @@
 import { AGES, ROLE_BY_ID, ROLES } from '../data/content';
 import { compactNumber } from '../core/economy';
 import type { CombatEvent, SettingsState, SimulationSnapshot, UnitEntity } from '../types';
+import { drawUnitFigure, isSignatureUnit, roleMark } from './unit-artist';
 
 interface Particle {
   x: number;
@@ -14,15 +15,14 @@ interface Particle {
   text?: string;
 }
 
-const roleCell = Object.fromEntries(ROLES.map((role, index) => [role.id, index])) as Record<UnitEntity['role'], number>;
 const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}${path}`;
 
 export class CanvasRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly background = new Image();
-  private readonly sprites = new Image();
   private readonly staticLayer = document.createElement('canvas');
   private staticContext: CanvasRenderingContext2D;
+  private unitSpriteCache = new Map<string, HTMLCanvasElement>();
   private particles: Particle[] = [];
   private width = 1;
   private height = 1;
@@ -47,9 +47,7 @@ export class CanvasRenderer {
     this.staticContext = staticContext;
     this.background.decoding = 'async';
     this.background.src = assetUrl('assets/generated/chronoforge-key-art.webp');
-    this.sprites.decoding = 'async';
-    this.sprites.src = assetUrl('assets/original/unit-sprites.svg');
-    Promise.allSettled([this.background.decode(), this.sprites.decode()]).then(() => {
+    this.background.decode().catch(() => undefined).then(() => {
       this.ready = true;
       this.buildStaticLayer();
     });
@@ -130,6 +128,7 @@ export class CanvasRenderer {
     this.context.drawImage(this.staticLayer, 0, 0, this.staticLayer.width, this.staticLayer.height, 0, 0, this.width, this.height);
     this.drawCaptureZone(snapshot);
     this.drawStructures(snapshot);
+    this.drawCombatLinks(snapshot, alpha);
     const sorted = [...snapshot.units].sort((a, b) => a.y - b.y);
     for (const unit of sorted) this.drawUnit(unit, alpha);
     this.updateAndDrawParticles(dt);
@@ -268,13 +267,80 @@ export class CanvasRenderer {
     ctx.restore();
   }
 
+  private drawCombatLinks(snapshot: SimulationSnapshot, alpha: number): void {
+    const ctx = this.context;
+    const byId = new Map(snapshot.units.map((unit) => [unit.id, unit]));
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (const unit of snapshot.units) {
+      if ((unit.state !== 'windup' && unit.state !== 'attack') || unit.targetId === null) continue;
+      const target = byId.get(unit.targetId);
+      if (!target || target.state === 'dead') continue;
+      const x = (unit.previousX + (unit.x - unit.previousX) * alpha) * this.width;
+      const y = (unit.previousY + (unit.y - unit.previousY) * alpha) * this.height;
+      const targetX = (target.previousX + (target.x - target.previousX) * alpha) * this.width;
+      const targetY = (target.previousY + (target.y - target.previousY) * alpha) * this.height;
+      const color = unit.team === 'ally' ? '#83fff0' : '#ff758f';
+      const ranged = unit.role === 'ranger' || unit.role === 'siege';
+      ctx.globalAlpha = unit.state === 'attack' ? 0.95 : 0.48;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = unit.role === 'siege' ? 4 : ranged ? 2.2 : 2.8;
+      ctx.setLineDash(unit.state === 'windup' && ranged ? [5, 5] : []);
+      if (ranged) {
+        ctx.beginPath();
+        ctx.moveTo(x, y - 4);
+        ctx.lineTo(targetX, targetY - 3);
+        ctx.stroke();
+        if (unit.state === 'attack') {
+          const progress = (Math.sin(this.time * 18 + unit.id) + 1) / 2;
+          const projectileX = x + (targetX - x) * progress;
+          const projectileY = y + (targetY - y) * progress;
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = unit.role === 'siege' ? 15 : 9;
+          ctx.beginPath();
+          ctx.arc(projectileX, projectileY, unit.role === 'siege' ? 5 : 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      } else {
+        const angle = Math.atan2(targetY - y, targetX - x);
+        ctx.beginPath();
+        ctx.arc(targetX, targetY, unit.isBoss ? 24 : 13, angle - 0.8, angle + 0.8);
+        ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  private unitSprite(unit: UnitEntity, teamColor: string): HTMLCanvasElement {
+    const cacheKey = `${unit.variantId}:${unit.team}`;
+    const cached = this.unitSpriteCache.get(cacheKey);
+    if (cached) return cached;
+    const sprite = document.createElement('canvas');
+    sprite.width = 180;
+    sprite.height = 180;
+    const context = sprite.getContext('2d');
+    if (context) {
+      context.translate(90, 94);
+      drawUnitFigure(context, unit, unit.isBoss ? 112 : 100, teamColor);
+    }
+    if (this.unitSpriteCache.size > 160) this.unitSpriteCache.clear();
+    this.unitSpriteCache.set(cacheKey, sprite);
+    return sprite;
+  }
+
   private drawUnit(unit: UnitEntity, alpha: number): void {
     const ctx = this.context;
     const interpolatedX = unit.previousX + (unit.x - unit.previousX) * alpha;
     const interpolatedY = unit.previousY + (unit.y - unit.previousY) * alpha;
     const x = interpolatedX * this.width;
     const y = interpolatedY * this.height;
-    const baseSize = Math.max(27, Math.min(50, this.width * unit.radius * (unit.isBoss ? 2.25 : 1.8)));
+    const signature = isSignatureUnit(unit);
+    const responsiveScale = Math.max(0.88, Math.min(1.12, this.width / 390));
+    const baseSize = (unit.isBoss ? 84 : unit.isHero ? 61 : signature ? 54 : unit.role === 'guardian' || unit.role === 'siege' ? 49 : 42) * responsiveScale;
     const bob = this.reducedMotion || unit.state !== 'move' ? 0 : Math.sin(this.time * 10 + unit.id) * 1.5;
     const spawnScale = unit.state === 'spawn' ? Math.max(0.2, 1 - unit.stateTimer * 1.9) : 1;
     const attackScale = unit.state === 'attack' ? 1.13 : unit.state === 'windup' ? 0.92 : 1;
@@ -284,14 +350,25 @@ export class CanvasRenderer {
 
     ctx.save();
     ctx.translate(x, y + bob);
-    ctx.fillStyle = '#0206128c';
+    ctx.fillStyle = '#020612b5';
     ctx.beginPath();
-    ctx.ellipse(0, size * 0.34, size * 0.43, size * 0.16, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, size * 0.42, size * 0.48, size * 0.14, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, size * 0.54);
+    ctx.lineTo(-size * 0.31, size * 0.35);
+    ctx.lineTo(size * 0.31, size * 0.35);
+    ctx.closePath();
+    ctx.fillStyle = `${teamColor}70`;
+    ctx.fill();
+    ctx.strokeStyle = teamColor;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
 
     if (unit.isHero || unit.isBoss || unit.elite) {
       ctx.beginPath();
-      ctx.arc(0, 0, size * 0.55 + (this.reducedMotion ? 0 : Math.sin(this.time * 4 + unit.id) * 1.2), 0, Math.PI * 2);
+      ctx.arc(0, 0, size * 0.63 + (this.reducedMotion ? 0 : Math.sin(this.time * 4 + unit.id) * 1.2), 0, Math.PI * 2);
       ctx.strokeStyle = unit.isHero ? '#ffffff' : unit.isBoss ? '#ffca7a' : age?.palette[0] ?? '#ffd86b';
       ctx.globalAlpha = 0.72;
       ctx.lineWidth = unit.isBoss ? 4 : 2;
@@ -299,47 +376,42 @@ export class CanvasRenderer {
       ctx.globalAlpha = 1;
     }
 
+    ctx.globalAlpha = unit.state === 'dead' ? 0.35 : 1;
+    const sprite = this.unitSprite(unit, teamColor);
+    ctx.drawImage(sprite, -size * 0.84, -size * 0.86, size * 1.68, size * 1.68);
+    ctx.fillStyle = '#07101de0';
     ctx.beginPath();
-    ctx.arc(0, 0, size * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = `${teamColor}24`;
+    ctx.roundRect(-size * 0.17, size * 0.37, size * 0.34, size * 0.27, 5);
     ctx.fill();
-    ctx.strokeStyle = teamColor;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    if (this.sprites.complete && this.sprites.naturalWidth > 0) {
-      const sourceX = roleCell[unit.role] * 128;
-      ctx.globalAlpha = unit.state === 'dead' ? 0.35 : 1;
-      if (unit.team === 'enemy') ctx.scale(-1, 1);
-      ctx.drawImage(this.sprites, sourceX, 0, 128, 128, -size * 0.55, -size * 0.68, size * 1.1, size * 1.1);
-    } else {
-      ctx.fillStyle = age?.palette[0] ?? '#f3cf77';
-      ctx.beginPath();
-      ctx.arc(0, -size * 0.1, size * 0.28, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillStyle = teamColor;
+    ctx.font = `900 ${Math.max(9, size * 0.2)}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.fillText(roleMark(unit.role), 0, size * 0.58);
     ctx.restore();
 
-    const barWidth = size * 0.88;
-    const barY = y - size * 0.71;
+    const barWidth = size * 1.02;
+    const barY = y - size * 0.72;
     ctx.fillStyle = '#050a17d9';
-    ctx.fillRect(x - barWidth / 2, barY, barWidth, 4);
+    ctx.fillRect(x - barWidth / 2, barY, barWidth, unit.isBoss ? 6 : 5);
     ctx.fillStyle = unit.hp / unit.maxHp < 0.28 ? '#ffca5e' : teamColor;
-    ctx.fillRect(x - barWidth / 2, barY, barWidth * Math.max(0, unit.hp / unit.maxHp), 4);
-    if (unit.team === 'enemy' && (unit.isBoss || unit.elite)) {
+    ctx.fillRect(x - barWidth / 2, barY, barWidth * Math.max(0, unit.hp / unit.maxHp), unit.isBoss ? 6 : 5);
+    const showName = unit.isHero || unit.isBoss || unit.elite || (unit.team === 'enemy' && signature && (unit.role === 'guardian' || unit.role === 'siege'));
+    if (showName) {
       ctx.fillStyle = unit.isBoss ? '#ffe3a0' : '#ffd27e';
-      ctx.font = `800 ${unit.isBoss ? 10 : 8}px system-ui`;
+      if (unit.isHero) ctx.fillStyle = '#efffff';
+      ctx.font = `900 ${unit.isBoss ? 11 : 9}px system-ui`;
       ctx.textAlign = 'center';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4;
       ctx.strokeStyle = '#070b18';
       ctx.strokeText(unit.displayName, x, barY - 5);
       ctx.fillText(unit.displayName, x, barY - 5);
     }
     if (unit.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${unit.flash * 0.5})`;
       ctx.beginPath();
-      ctx.arc(x, y, size * 0.55, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(x, y, size * 0.63, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${unit.flash * 0.72})`;
+      ctx.lineWidth = 4;
+      ctx.stroke();
     }
   }
 

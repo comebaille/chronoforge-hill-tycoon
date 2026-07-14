@@ -55,6 +55,22 @@ const GEAR_COPY: Record<GearKey, { name: string; description: string; bonus: str
   banner: { name: 'Bannière logistique', description: 'Réduit les délais de tous les spawners.', bonus: '+6 % cadence' },
 };
 
+const ORDER_COPY: Record<GameState['spawners'][UnitRole]['order'], { label: string; description: string }> = {
+  push: { label: 'Colline', description: 'Avance au centre et affronte la ligne la plus proche.' },
+  hero: { label: 'Escorte', description: 'Reste autour du héros et attaque ce qui le menace.' },
+  hunt: { label: 'Chasse', description: 'Traverse la ligne pour viser tireurs, soutiens et siège.' },
+  defend: { label: 'Défense', description: 'Intercepte en priorité les ennemis proches de ta base.' },
+};
+
+const ROLE_USE: Record<UnitRole, string> = {
+  assault: 'Le cœur de ta ligne : peu coûteux, remplace vite les pertes et apporte du poids sur la colline.',
+  ranger: 'Tire derrière les tanks et finit les cibles blessées avant qu’elles ne reçoivent des soins.',
+  guardian: 'Ton bloqueur : 2,6× plus de PV et 1,5 point de capture, mais il occupe 2 places.',
+  scout: 'Traverse rapidement le front pour éliminer tireurs, soigneurs et pièces d’artillerie.',
+  support: 'Soigne en continu l’allié le plus blessé et prolonge la durée de vie de toute la poussée.',
+  siege: 'Artillerie lente à très longue portée : dégâts massifs et 42 % d’éclaboussure autour de la cible.',
+};
+
 export class ChronoforgeApp {
   private state: GameState = loadGame();
   private settings: SettingsState = loadSettings();
@@ -78,6 +94,8 @@ export class ChronoforgeApp {
   private lastBossState = false;
   private pendingOffline: OfflineReport;
   private panelScroll: Partial<Record<GameTab, number>> = {};
+  private movementKeys = new Set<string>();
+  private activeJoystickPointer: number | null = null;
   private root: HTMLElement;
   private canvas: HTMLCanvasElement;
   private panel: HTMLElement;
@@ -128,9 +146,17 @@ export class ChronoforgeApp {
 
           <div class="boss-banner" id="boss-banner" hidden><span>MENACE SOUVERAINE</span><strong id="boss-name">Mâchoire-de-Roc</strong></div>
 
+          <div class="hero-movement" aria-label="Déplacement manuel du héros">
+            <button class="hero-joystick" id="hero-joystick" type="button" aria-label="Maintenir et glisser pour déplacer le héros">
+              <i class="joystick-arrows" aria-hidden="true"></i>
+              <span id="joystick-knob" aria-hidden="true"></span>
+            </button>
+            <small>DÉPLACER</small>
+          </div>
+
           <div class="battle-controls" aria-label="Commandes de combat">
-            <button class="assist-button" id="auto-button" aria-pressed="${this.settings.autoAttack}">
-              <span class="assist-dot"></span><span>Auto</span>
+            <button class="assist-button" id="auto-button" aria-pressed="${this.settings.autoAttack}" aria-label="Activer ou désactiver le pilote automatique du héros">
+              <span class="assist-dot"></span><span>AUTO HÉROS</span>
             </button>
             <button class="combat-button ability" id="ability-button" aria-label="Déclencher l’onde chronale">
               ${ICONS.burst}<small id="ability-cooldown">PRÊT</small>
@@ -151,7 +177,7 @@ export class ChronoforgeApp {
           <div class="panel-handle" aria-hidden="true"></div>
           <header class="panel-header">
             <div><span class="eyebrow">CHRONOFORGE</span><h2 id="panel-title">Caserne</h2></div>
-            <div class="panel-actions"><span class="panel-balance" aria-label="Trésor disponible">${ICONS.coin}<b data-live-coins>${compactNumber(this.state.coins)}</b></span><button class="close-panel icon-button" aria-label="Fermer le panneau">×</button></div>
+            <div class="panel-actions"><span class="panel-balance" aria-label="Trésor disponible">${ICONS.coin}<b data-live-coins>${compactNumber(this.state.coins)}</b></span><button class="panel-size-button icon-button" id="panel-size-button" aria-label="Agrandir le panneau" aria-pressed="false">↕</button><button class="close-panel icon-button" aria-label="Fermer le panneau">×</button></div>
           </header>
           <div class="panel-content" id="panel-content"></div>
         </section>
@@ -237,6 +263,7 @@ export class ChronoforgeApp {
       button.addEventListener('click', () => this.setTab(button.dataset.tab as GameTab));
     });
     this.query('.close-panel').addEventListener('click', () => this.setTab('war'));
+    this.query('#panel-size-button').addEventListener('click', () => this.togglePanelSize());
     this.query('#skip-tutorial').addEventListener('click', () => {
       this.state.tutorialComplete = true;
       this.state.tutorialStep = 6;
@@ -261,6 +288,77 @@ export class ChronoforgeApp {
       if (document.hidden) saveGame(this.state);
       this.previousFrame = performance.now();
     });
+    this.bindHeroMovement();
+  }
+
+  private bindHeroMovement(): void {
+    const joystick = this.query<HTMLButtonElement>('#hero-joystick');
+    const knob = this.query<HTMLElement>('#joystick-knob');
+    const updatePointer = (event: PointerEvent): void => {
+      if (this.activeJoystickPointer !== event.pointerId) return;
+      const rect = joystick.getBoundingClientRect();
+      const radius = Math.max(1, Math.min(rect.width, rect.height) * 0.36);
+      let dx = event.clientX - (rect.left + rect.width / 2);
+      let dy = event.clientY - (rect.top + rect.height / 2);
+      const distance = Math.hypot(dx, dy);
+      if (distance > radius) {
+        dx = dx / distance * radius;
+        dy = dy / distance * radius;
+      }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      this.simulation.setHeroMovement(dx / radius, dy / radius);
+      event.preventDefault();
+    };
+    const releasePointer = (event: PointerEvent): void => {
+      if (this.activeJoystickPointer !== event.pointerId) return;
+      this.activeJoystickPointer = null;
+      knob.style.transform = '';
+      this.simulation.setHeroMovement(0, 0);
+      if (joystick.hasPointerCapture(event.pointerId)) joystick.releasePointerCapture(event.pointerId);
+    };
+    joystick.addEventListener('pointerdown', (event) => {
+      this.activeJoystickPointer = event.pointerId;
+      joystick.setPointerCapture(event.pointerId);
+      updatePointer(event);
+    });
+    joystick.addEventListener('pointermove', updatePointer);
+    joystick.addEventListener('pointerup', releasePointer);
+    joystick.addEventListener('pointercancel', releasePointer);
+
+    const movementKeys = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'z', 'q']);
+    window.addEventListener('keydown', (event) => {
+      const key = event.key.toLowerCase();
+      if (!movementKeys.has(key) || !this.started || this.activeTab !== 'war') return;
+      this.movementKeys.add(key);
+      this.syncKeyboardMovement();
+      event.preventDefault();
+    });
+    window.addEventListener('keyup', (event) => {
+      const key = event.key.toLowerCase();
+      if (!movementKeys.has(key)) return;
+      this.movementKeys.delete(key);
+      this.syncKeyboardMovement();
+    });
+    window.addEventListener('blur', () => {
+      this.movementKeys.clear();
+      this.syncKeyboardMovement();
+    });
+  }
+
+  private syncKeyboardMovement(): void {
+    const left = this.movementKeys.has('arrowleft') || this.movementKeys.has('a') || this.movementKeys.has('q');
+    const right = this.movementKeys.has('arrowright') || this.movementKeys.has('d');
+    const up = this.movementKeys.has('arrowup') || this.movementKeys.has('w') || this.movementKeys.has('z');
+    const down = this.movementKeys.has('arrowdown') || this.movementKeys.has('s');
+    this.simulation.setHeroMovement(Number(right) - Number(left), Number(down) - Number(up));
+  }
+
+  private togglePanelSize(): void {
+    const expanded = this.panel.classList.toggle('expanded');
+    const button = this.query<HTMLButtonElement>('#panel-size-button');
+    button.setAttribute('aria-pressed', String(expanded));
+    button.setAttribute('aria-label', expanded ? 'Réduire le panneau pour voir le combat' : 'Agrandir le panneau');
+    this.audio.play('confirm');
   }
 
   private async startGame(): Promise<void> {
@@ -447,6 +545,11 @@ export class ChronoforgeApp {
 
   private setTab(tab: GameTab): void {
     const returnFocusFromPanel = tab === 'war' && this.panel.contains(document.activeElement);
+    if (tab !== 'war') {
+      this.movementKeys.clear();
+      this.simulation.setHeroMovement(0, 0);
+      this.query<HTMLElement>('#joystick-knob').style.transform = '';
+    }
     this.panelScroll[this.activeTab] = this.panel.querySelector('.panel-content')?.scrollTop ?? 0;
     this.activeTab = tab;
     this.query<HTMLElement>('.game-shell').dataset.tab = tab;
@@ -506,15 +609,18 @@ export class ChronoforgeApp {
           const canAfford = this.state.coins >= cost;
           const name = age.allyNames[role.id];
           const cadence = Math.max(0.58, 1 - Math.min(0.18, spawner.level * 0.015));
+          const orderCopy = ORDER_COPY[spawner.order];
           return `<article class="upgrade-card ${unlocked ? '' : 'locked'}" data-role="${role.id}">
             <div class="role-sprite role-${role.id}" aria-hidden="true"></div>
             <div class="upgrade-copy">
-              <div class="card-title"><div><span>${role.name} · ${age.shortName}</span><h3>${name}</h3></div><b>NIV. ${spawner.level}</b></div>
+              <div class="card-title"><div><span>SPAWNER ${role.name.toUpperCase()} · ${age.shortName}</span><h3>${name}</h3></div><b>NIV. ${spawner.level}</b></div>
               <p>${unlocked ? role.description : `Se débloque : ${roleUnlockLabel(role.id)}`}</p>
-              <div class="stat-chips"><span>${Math.round(role.hpMultiplier * 100)} % PV</span><span>${Math.round(role.damageMultiplier * 100)} % DPS</span><span>${(role.spawnSeconds * cadence).toFixed(1)} s</span></div>
+              <div class="stat-chips"><span>1 unité / ${(role.spawnSeconds * cadence).toFixed(1)} s</span><span>Population ${role.population}</span><span>+8 % / niveau</span></div>
             </div>
+            <div class="role-purpose"><strong>À QUOI IL SERT</strong><span>${ROLE_USE[role.id]}</span></div>
+            ${unlocked && spawner.level > 0 ? `<div class="tactic-control"><div><strong>ORDRE : ${orderCopy.label.toUpperCase()}</strong><span>${orderCopy.description}</span></div><div class="tactic-buttons" role="group" aria-label="Ordre des ${name}">${(Object.keys(ORDER_COPY) as Array<keyof typeof ORDER_COPY>).map((order) => `<button data-order-role="${role.id}" data-order="${order}" class="${spawner.order === order ? 'active' : ''}" aria-pressed="${spawner.order === order}">${ORDER_COPY[order].label}</button>`).join('')}</div></div>` : ''}
             <button class="buy-button" data-buy-spawner="${role.id}" data-cost="${cost}" data-locked="${!unlocked}" ${!unlocked || !canAfford ? 'disabled' : ''} aria-label="Améliorer ${name}">
-              <span>${spawner.level === 0 ? 'CONSTRUIRE' : 'AMÉLIORER'}</span><strong>${unlocked ? compactNumber(cost) : 'VERROUILLÉ'} ${unlocked ? ICONS.coin : ''}</strong>
+              <span>${spawner.level === 0 ? 'CONSTRUIRE CE SPAWNER' : 'RENFORCER · +8 % PV/DÉGÂTS'}</span><strong>${unlocked ? compactNumber(cost) : 'VERROUILLÉ'} ${unlocked ? ICONS.coin : ''}</strong>
             </button>
           </article>`;
         }).join('')}
@@ -651,6 +757,16 @@ export class ChronoforgeApp {
       this.renderPanel(`[data-buy-amount="${amount}"]`);
       return;
     }
+    const orderRole = button.dataset.orderRole as UnitRole | undefined;
+    const order = button.dataset.order as GameState['spawners'][UnitRole]['order'] | undefined;
+    if (orderRole && order && Object.hasOwn(ORDER_COPY, order)) {
+      this.state.spawners[orderRole].order = order;
+      this.audio.play('confirm');
+      this.toast(`${ROLE_BY_ID[orderRole].name} : ordre ${ORDER_COPY[order].label}.`, 'info');
+      saveGame(this.state);
+      this.renderPanel(`[data-order-role="${orderRole}"][data-order="${order}"]`);
+      return;
+    }
     const role = button.dataset.buySpawner as UnitRole | undefined;
     if (role) {
       const before = this.state.spawners[role].level;
@@ -659,7 +775,7 @@ export class ChronoforgeApp {
         this.audio.play('confirm');
         this.haptic(12);
         this.toast(`${ROLE_BY_ID[role].name} : niveau ${before + bought}.`, 'success');
-        if (this.state.tutorialStep === 0) this.advanceTutorial(1, 'Ton premier soldat arrive. Reviens au combat et utilise FRAPPE.');
+        if (this.state.tutorialStep === 0) this.advanceTutorial(1, 'Ton premier soldat arrive. Déplace le héros avec le joystick puis utilise FRAPPE.');
         saveGame(this.state);
       } else this.toast('Trésor insuffisant pour cet achat.', 'danger');
       this.renderPanel(`[data-buy-spawner="${role}"]`);
@@ -762,7 +878,7 @@ export class ChronoforgeApp {
     }
     const instructions = [
       'Construis le spawner Assaut dans la Caserne.',
-      'Reviens en Guerre et utilise FRAPPE sur un ennemi.',
+      'Déplace le héros avec le joystick, puis utilise FRAPPE sur un ennemi.',
       'Continue le combat jusqu’à ta première prime.',
       'Ouvre la Forge et améliore une arme ou une armure.',
       'Ouvre Âges pour découvrir les 45 collines.',
@@ -775,7 +891,7 @@ export class ChronoforgeApp {
     if (this.state.tutorialComplete || !this.started) return '';
     const instructions = [
       'Construis le spawner Assaut ci-dessous.',
-      'Reviens en Guerre et utilise FRAPPE sur un ennemi.',
+      'Déplace le héros avec le joystick, puis utilise FRAPPE sur un ennemi.',
       'Continue le combat jusqu’à ta première prime.',
       'Améliore une arme ou une armure dans cette Forge.',
       'Observe les neuf âges et leurs 45 collines.',

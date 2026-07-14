@@ -34,6 +34,51 @@ describe('simulation de bataille', () => {
     expect(state.stats.playSeconds).toBeCloseTo(1, 4);
   });
 
+  it('laisse le héros immobile sans pilote puis applique le déplacement manuel', () => {
+    const state = createDefaultState(1000);
+    const simulation = new BattleSimulation(state);
+    simulation.setAutoAttack(false);
+    runTicks(simulation, 30);
+    const hero = simulation.getSnapshot().units.find((unit) => unit.isHero)!;
+    const start = { x: hero.x, y: hero.y };
+
+    runTicks(simulation, 30);
+    expect(hero.x).toBeCloseTo(start.x, 8);
+    expect(hero.y).toBeCloseTo(start.y, 8);
+
+    simulation.setHeroMovement(-1, -1);
+    runTicks(simulation, 30);
+    expect(hero.x).toBeLessThan(start.x - 0.05);
+    expect(hero.y).toBeLessThan(start.y - 0.05);
+
+    simulation.setHeroMovement(0, 0);
+    const stopped = { x: hero.x, y: hero.y };
+    runTicks(simulation, 30);
+    expect(hero.x).toBeCloseTo(stopped.x, 8);
+    expect(hero.y).toBeCloseTo(stopped.y, 8);
+  });
+
+  it('fait réellement tenir la ligne aux soldats placés en ordre Défense', () => {
+    const pushState = createDefaultState(1000);
+    pushState.spawners.assault.level = 1;
+    pushState.spawners.assault.count = 1;
+    pushState.spawners.assault.timer = 0;
+    const defendState = structuredClone(pushState);
+    defendState.spawners.assault.order = 'defend';
+    const push = new BattleSimulation(pushState);
+    const defend = new BattleSimulation(defendState);
+    push.setAutoAttack(false);
+    defend.setAutoAttack(false);
+
+    runTicks(push, 30 * 6);
+    runTicks(defend, 30 * 6);
+    const pushedUnit = push.getSnapshot().units.find((unit) => unit.team === 'ally' && !unit.isHero)!;
+    const defendingUnit = defend.getSnapshot().units.find((unit) => unit.team === 'ally' && !unit.isHero)!;
+
+    expect(defendingUnit.y).toBeGreaterThan(pushedUnit.y + 0.08);
+    expect(defendingUnit.y).toBeGreaterThan(0.6);
+  });
+
   it('donne un cooldown clair à la frappe et à l’onde chronale', () => {
     const state = createDefaultState(1000);
     const simulation = new BattleSimulation(state);

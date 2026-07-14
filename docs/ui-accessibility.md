@@ -17,7 +17,7 @@ Barre basse fixe avec icône et libellé :
 4. **Âges** : chronologie, secteurs, boss et déblocages.
 5. **QG** : recherches, missions, codex, statistiques et réglages.
 
-- Portrait : Caserne et Forge s'ouvrent en bottom sheets, hauteur maximale `72dvh`.
+- Portrait : Caserne et Forge s'ouvrent d'abord en bottom sheets compacts de `38dvh` afin de laisser la colline visible. Un bouton permet de les agrandir à `72dvh` pour la lecture détaillée.
 - Paysage : le Canvas occupe environ 68 % de la largeur et le panneau actif 32 %, avec un maximum de 360 px.
 - Une rotation conserve combat, sélection, scroll et panneau ouvert.
 - En mode grand texte, la barre peut devenir `Guerre / Caserne / Plus`; `Plus` donne accès aux trois autres destinations.
@@ -28,10 +28,10 @@ HUD minimal : argent, revenu par seconde, âge, secteur, vague, vie du héros, j
 
 Commandes tactiles :
 
-- joystick fixe ou flottant, zone de 112 px ;
+- joystick fixe de 80 à 92 px selon la largeur, avec glissement analogique et équivalent clavier ;
 - attaque principale 72 px ;
-- esquive et compétence 56 px ;
-- auto-attaque explicite ;
+- Onde chronale 56 px ;
+- pilote automatique explicite et désactivable ;
 - mode gaucher inversant les commandes ;
 - mode héros assisté pour rejoindre l'objectif et attaquer automatiquement.
 
@@ -126,7 +126,7 @@ Objectif : WCAG 2.2 AA pour le shell HTML, avec alternative textuelle utile au C
 - Audio : général, musique, effets, interface.
 - Confort : shake, flashes, particules, vibrations, sous-titres.
 - Affichage : taille texte/UI, contraste, palette, dégâts flottants.
-- Contrôles : gaucher, joystick fixe/flottant, taille, opacité, aide à la visée, auto-attaque.
+- Contrôles : gaucher, joystick fixe, ciblage par tap et pilote automatique.
 - Performance : automatique, 30 ou 60 FPS ; qualité ; économie de batterie.
 - Système : langue, tutoriel, export/import de sauvegarde.
 

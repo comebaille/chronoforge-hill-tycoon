@@ -46,6 +46,7 @@ export class BattleSimulation {
   private bossMechanicTarget = { x: 0.5, y: 0.5, unitId: null as number | null, lane: 1 };
   private paused = false;
   private autoAttack = true;
+  private heroMovement = { x: 0, y: 0 };
 
   constructor(public state: GameState) {
     this.random = new SeededRandom(state.totalSectors * 104729 + state.stats.kills + 1);
@@ -64,6 +65,17 @@ export class BattleSimulation {
 
   setAutoAttack(enabled: boolean): void {
     this.autoAttack = enabled;
+  }
+
+  setHeroMovement(x: number, y: number): void {
+    const length = Math.hypot(x, y);
+    if (length < 0.08) {
+      this.heroMovement.x = 0;
+      this.heroMovement.y = 0;
+      return;
+    }
+    this.heroMovement.x = x / Math.max(1, length);
+    this.heroMovement.y = y / Math.max(1, length);
   }
 
   setPaused(paused: boolean): void {
@@ -372,6 +384,10 @@ export class BattleSimulation {
   private acquireTargets(): void {
     const living = this.units.filter((unit) => unit.state !== 'dead');
     for (const unit of living) {
+      if (unit.isHero && !this.autoAttack) {
+        unit.targetId = null;
+        continue;
+      }
       const candidates = living.filter((candidate) => candidate.team !== unit.team && candidate.state !== 'dead');
       if (candidates.length === 0) {
         unit.targetId = null;
@@ -385,6 +401,15 @@ export class BattleSimulation {
 
   private targetScore(source: UnitEntity, target: UnitEntity, strategy: string): number {
     const distance = Math.hypot(source.x - target.x, source.y - target.y);
+    if (source.team === 'ally' && !source.isHero) {
+      const order = this.state.spawners[source.role].order;
+      if (order === 'hero') {
+        const hero = this.units.find((unit) => unit.isHero && unit.state !== 'dead');
+        if (hero) return Math.hypot(hero.x - target.x, hero.y - target.y) + distance * 0.12;
+      }
+      if (order === 'hunt') return distance * 0.45 + (target.role === 'ranger' || target.role === 'support' || target.role === 'siege' ? -0.42 : 0);
+      if (order === 'defend') return distance * 0.34 - target.y * 0.52;
+    }
     if (strategy === 'weakest') return distance * 0.55 + target.hp / target.maxHp * 0.18;
     if (strategy === 'backline') return distance + (target.role === 'ranger' || target.role === 'support' ? -0.34 : 0);
     if (strategy === 'cluster') return distance + (target.isBoss ? -0.08 : 0);
@@ -404,7 +429,34 @@ export class BattleSimulation {
         continue;
       }
 
-      const target = unit.targetId ? this.units.find((candidate) => candidate.id === unit.targetId && candidate.state !== 'dead') : undefined;
+      if (unit.isHero) {
+        const movementLength = Math.hypot(this.heroMovement.x, this.heroMovement.y);
+        if (movementLength > 0.08) {
+          unit.state = 'move';
+          unit.targetId = null;
+          const manualSpeed = unit.speed * 1.72 * dt;
+          unit.x += this.heroMovement.x * manualSpeed;
+          unit.y += this.heroMovement.y * manualSpeed;
+          unit.x = Math.max(0.15, Math.min(0.85, unit.x));
+          unit.y = Math.max(0.13, Math.min(0.87, unit.y));
+          continue;
+        }
+        if (!this.autoAttack) {
+          unit.state = 'move';
+          unit.targetId = null;
+          continue;
+        }
+      }
+
+      let target = unit.targetId ? this.units.find((candidate) => candidate.id === unit.targetId && candidate.state !== 'dead') : undefined;
+      if (unit.team === 'ally' && !unit.isHero) {
+        const order = this.state.spawners[unit.role].order;
+        if (order === 'defend' && target && target.y < 0.56 && unit.y > 0.58) target = undefined;
+        if (order === 'hero' && target) {
+          const hero = this.units.find((candidate) => candidate.isHero && candidate.state !== 'dead');
+          if (hero && Math.hypot(hero.x - target.x, hero.y - target.y) > 0.3) target = undefined;
+        }
+      }
       if (unit.state === 'windup') {
         if (unit.stateTimer <= 0) {
           unit.state = 'attack';
@@ -436,8 +488,21 @@ export class BattleSimulation {
         }
         this.moveToward(unit, target.x, target.y, dt);
       } else {
-        const destinationY = unit.team === 'ally' ? 0.32 : 0.68;
-        this.moveToward(unit, LANES[unit.lane] ?? 0.5, destinationY, dt);
+        let destinationX = LANES[unit.lane] ?? 0.5;
+        let destinationY = unit.team === 'ally' ? 0.32 : 0.68;
+        if (unit.team === 'ally' && !unit.isHero) {
+          const order = this.state.spawners[unit.role].order;
+          if (order === 'defend') destinationY = 0.7;
+          if (order === 'hunt') destinationY = 0.24;
+          if (order === 'hero') {
+            const hero = this.units.find((candidate) => candidate.isHero && candidate.state !== 'dead');
+            if (hero) {
+              destinationX = hero.x;
+              destinationY = Math.min(0.82, hero.y + 0.045);
+            }
+          }
+        }
+        this.moveToward(unit, destinationX, destinationY, dt);
       }
       unit.y = Math.max(0.045, Math.min(0.945, unit.y));
       unit.x = Math.max(0.18, Math.min(0.82, unit.x));

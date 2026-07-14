@@ -11,6 +11,9 @@ Tycoon de guerre mobile jouable dans le navigateur. Construisez six familles de 
 - forge collective, missions, gains hors ligne, sauvegarde versionnée et arbre de prestige ;
 - campagne principale calibrée pour environ 9 h 35 à 13 h 10, puis Frontière paradoxale infinie à difficulté croissante ;
 - interface tactile portrait/paysage, mode gaucher, contraste renforcé, texte agrandi, réduction des mouvements et réglages audio ;
+- joystick tactile pour déplacer réellement le héros, ciblage par tap, frappe active, Onde chronale et pilote automatique optionnel ;
+- ordres tactiques par spawner (Colline, Escorte, Chasse, Défense) et panneau compact qui laisse le combat visible ;
+- silhouettes historiques lisibles : mammouths, raptors, chars, éléphants cuirassés, artillerie, drones et méchas sont rendus selon leur véritable archétype ;
 - PWA installable, jouable hors ligne après la première visite.
 
 ## Jouer

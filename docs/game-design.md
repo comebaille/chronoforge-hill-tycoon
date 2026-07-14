@@ -27,7 +27,9 @@ Une défaite ne détruit aucun achat. Le joueur conserve 75 % des pièces gagné
 
 ## Champ de bataille et capture
 
-Le champ de bataille tient sur un écran mobile en portrait : base et spawners en bas, trois couloirs de navigation invisibles, colline centrale et portail ennemi en haut. Les soldats se déplacent automatiquement. Le héros utilise un joystick, une attaque, une esquive et une compétence ; l'aide à la visée et le pilotage assisté sont optionnels.
+Le champ de bataille tient sur un écran mobile en portrait : base et spawners en bas, trois couloirs de navigation invisibles, colline centrale et portail ennemi en haut. Les soldats se déplacent automatiquement. Le héros utilise un joystick tactile, une frappe ciblée et l'Onde chronale ; le pilote automatique reste entièrement optionnel.
+
+Chaque famille alliée reçoit aussi un ordre collectif : **Colline** pour pousser, **Escorte** pour protéger le héros, **Chasse** pour viser l'arrière-garde ou **Défense** pour tenir près de la base. La Caserne explique directement le rôle, la cadence, la population et l'effet concret de chaque spawner.
 
 Pression préalable à la capture :
 

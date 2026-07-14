@@ -3,7 +3,7 @@
 ## Combat global
 
 - **Simulation :** pas fixe de `1/30 s`, six rattrapages maximum par frame ; le rendu interpole entre position précédente et courante.
-- **Verbes joueur :** construire, améliorer, déclencher une frappe ciblée, activer l'Onde chronale, choisir l'auto-attaque et mettre en pause.
+- **Verbes joueur :** construire, améliorer, déplacer librement le héros au joystick, déclencher une frappe ciblée, activer l'Onde chronale, choisir le pilote automatique, donner un ordre collectif à chaque classe et mettre en pause.
 - **Portées :** coordonnées normalisées ; mêlée autour de `0,052..0,060`, distance `0,15..0,24`, héros `0,09` pour son entité mais frappe active globale sur la cible choisie.
 - **TTK de référence :** produit par `PV / DPS effectif`; il doit rester proche de 2–5 s pour un standard équivalent et 30–120 s pour le boss selon l'investissement.
 - **Population :** 22 points alliés hors héros, 28 ennemis vivants et 58 entités totales.
@@ -12,6 +12,8 @@
 - **Recalcul des cibles :** toutes les `0,16 s`.
 - **Invulnérabilité / stun :** aucun dans l'implémentation actuelle.
 - **Mort :** état `dead` pendant `0,42 s`, puis retrait ; le héros revient après six secondes.
+
+Sans pilote automatique, le héros reste exactement à la position choisie et ne poursuit plus les ennemis tout seul. Un mouvement au joystick interrompt immédiatement sa poursuite automatique. Les soldats restent autonomes mais leur sélection de cible et leur point d'attente dépendent de l'ordre de leur spawner.
 
 ## Machine d'états commune
 
